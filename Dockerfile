@@ -1,5 +1,5 @@
 # build react components for production mode
-FROM node:11.10-alpine AS node-webpack
+FROM node:11.10-alpine AS webpack
 WORKDIR /usr/src/app
 
 # NOTE: package.json and webpack.config.js not likely to change between dev builds
@@ -13,7 +13,7 @@ RUN npm run prod && \
     rm -rf /usr/src/app/assets/src
 
 # build node libraries for production mode
-FROM node-webpack AS node-prod-deps
+FROM webpack AS prod-deps
 
 RUN npm prune --production && \
     # This is needed to clean up the examples files as these cause collectstatic to fail (and take up extra space)
@@ -34,10 +34,10 @@ RUN apt-get update && \
     pip install -r requirements.txt
 
 # copy built react and node libraries for production mode
-COPY --from=node-prod-deps /usr/src/app/package-lock.json /code/package-lock.json
-COPY --from=node-prod-deps /usr/src/app/webpack-stats.json /code/webpack-stats.json
-COPY --from=node-prod-deps /usr/src/app/assets /code/assets
-COPY --from=node-prod-deps /usr/src/app/node_modules /code/node_modules
+COPY --from=prod-deps /usr/src/app/package-lock.json /code/package-lock.json
+COPY --from=prod-deps /usr/src/app/webpack-stats.json /code/webpack-stats.json
+COPY --from=prod-deps /usr/src/app/assets /code/assets
+COPY --from=prod-deps /usr/src/app/node_modules /code/node_modules
 
 # NOTE: project files likely to change between dev builds
 COPY . /code/
